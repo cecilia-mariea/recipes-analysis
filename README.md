@@ -1,2 +1,2 @@
-# recipes-analysis
-Fall 2024 final project for DSC80, UCSD. 
+# Analyzing Easy and Healthy Recipes
+## A Fall 2024 DSC80 Project
