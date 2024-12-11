@@ -115,7 +115,7 @@
     </tr>
     <tr>
       <td>ingredients</td>
-      <td>Text for recie ingredinets</td>
+      <td>Text for recipe ingredinets</td>
       <td>str</td>
     </tr>
     <tr>
@@ -126,7 +126,7 @@
   </tbody>
 </table>
 
-<p>The most important columns for temporal anlaysis of complexity will be <code class="language-plaintext highlighter-rouge">submitted</code>, <code class="language-plaintext highlighter-rouge">tags</code>, and <code class="language-plaintext highlighter-rouge">n_steps</code>.</p>
+<p>The most important columns for temporal anlaysis of complexity will be <code class="language-plaintext highlighter-rouge">submitted</code>, <code class="language-plaintext highlighter-rouge">tags</code>, and <code class="language-plaintext highlighter-rouge">n_steps</code>. <code class="language-plaintext highlighter-rouge">n_ingredients</code> and <code class="language-plaintext highlighter-rouge">minutes</code> will also be explored in aggregates.</p>
 
 <p>The second data set we have is <code class="language-plaintext highlighter-rouge">ratings</code>. It has <em>731927</em> rows and <em>5</em> columns (described below).</p>
 
@@ -169,9 +169,7 @@
 
 <p>The most imortant columns for temporal analysis of complexity will be <code class="language-plaintext highlighter-rouge">date</code>.</p>
 
-<h2 id="exploratory-data-analysis">Exploratory Data Analysis</h2>
-
-<h3 id="data-cleaning">Data Cleaning</h3>
+<h2 id="data-cleaning-and-exploratory-data-analysis">Data Cleaning and Exploratory Data Analysis</h2>
 
 <p>In order to do proper investigation, I will clean the data set accordingly.</p>
 <ol>
@@ -182,9 +180,9 @@
 
     <p><strong>The merged data set will now be referred to as <code class="language-plaintext highlighter-rouge">recipes_ratings</code>.</strong></p>
   </li>
-  <li>Fill the <code class="language-plaintext highlighter-rouge">rating</code> values with <code class="language-plaintext highlighter-rouge">np.nan</code> if the are <code class="language-plaintext highlighter-rouge">0</code>.
+  <li>Fill the <code class="language-plaintext highlighter-rouge">rating</code> values with <code class="language-plaintext highlighter-rouge">np.nan</code> if they are <code class="language-plaintext highlighter-rouge">0</code>.
     <ul>
-      <li>Looking at the layout of Food.com, all star ratings are out of 1-5. If the user does not leavea a rating, a rating is not dispalyed. In addition if we look through some of the <code class="language-plaintext highlighter-rouge">review</code> values that correspond to missing <code class="language-plaintext highlighter-rouge">rating</code> values. Some of them are positive in sentiment and so assigning them to <code class="language-plaintext highlighter-rouge">0</code> may artificially lower aggregate data.</li>
+      <li>Looking at the layout of Food.com, all star ratings are out of [1,5]. If the user does not leave a rating, a rating is simply not dispalyed. In addition if we look through some of the <code class="language-plaintext highlighter-rouge">review</code> values that correspond to missing <code class="language-plaintext highlighter-rouge">rating</code> values. Some of them are positive in sentiment and so assigning them to <code class="language-plaintext highlighter-rouge">0</code> may artificially lower aggregate data.</li>
     </ul>
   </li>
   <li>
@@ -195,9 +193,9 @@
   <li>Convert the <code class="language-plaintext highlighter-rouge">date</code> and <code class="language-plaintext highlighter-rouge">submitted</code> columns to <code class="language-plaintext highlighter-rouge">pd.DateTime</code> objects.
     <ul>
       <li>This will allow us to do transformations on dates.</li>
-      <li>extract the month and year for every both columns into a seperate column</li>
+      <li>Extract the month and year for every both columns into a seperate column</li>
       <li>I also transformed both the month the review was left and the month the recipe was first submitted into corresponding seasons. 
-<code class="language-plaintext highlighter-rouge">{winter: 1, spring: 2, summer: 3, fall: 4}</code></li>
+<code class="language-plaintext highlighter-rouge">{winter: 1, spring: 2, summer: 3, fall: 4}</code>. I am making another assumption here that the corresponding month are generally well associated with a season.</li>
     </ul>
   </li>
   <li>Convert the tags into a list of strings.
@@ -452,7 +450,7 @@
 
 <iframe src="assets\main_MAR.html" width="800" height="600" frameborder="0"></iframe>
 
-<p>Using a similar testing procedure as explained above. I calculated the <strong>p-value = 0.845</strong>. For a significance level, alpha = 0.05, p-value &gt; alpha. We fail to reject the null hypothesis. The misingness of <code class="language-plaintext highlighter-rouge">rating</code> is <em>not</em> MAR dependent on <code class="language-plaintext highlighter-rouge">is_main</code>.</p>
+<p>Using a similar testing procedure as explained above. I calculated the <strong>p-value = 0.853</strong>. For a significance level, alpha = 0.05, p-value &gt; alpha. We fail to reject the null hypothesis. The misingness of <code class="language-plaintext highlighter-rouge">rating</code> is <em>not</em> MAR dependent on <code class="language-plaintext highlighter-rouge">is_main</code>.</p>
 
 <h2 id="hypothesis-testing">Hypothesis Testing</h2>
 <p>In order to further investigate if there are seasonal trends in recipe complexity, I want to investigate if the monthly distribution of recipes depends on whether the recipe is easy or not.</p>
@@ -464,7 +462,7 @@
 
 <iframe src="assets\season_difficulty.html" width="800" height="600" frameborder="0"></iframe>
 
-<p>For alpha = 0.05, <strong>p-value &lt; alpha</strong> , we reject the null hypothesis. The monthly distribution of recipes depends on whether the dish is easy or not. This hints at there possible temporal patterns in recipe complexity.</p>
+<p>For alpha = 0.05, <strong>p-value = 0 &lt; alpha</strong> , we reject the null hypothesis. The monthly distribution of recipes depends on whether the dish is easy or not. This hints at there possible temporal patterns in recipe complexity.</p>
 
 <h2 id="framing-a-prediction-problem">Framing A Prediction Problem</h2>
 
@@ -483,35 +481,37 @@
 
 <p>I pass <code class="language-plaintext highlighter-rouge">n_steps</code> without any transformations into a ColumnTransformer ; it is a numerical variable. I one-hot encoded <code class="language-plaintext highlighter-rouge">is_easy</code>, a binary, nominal categorical variable. I train a <code class="language-plaintext highlighter-rouge">sklearn</code> RandomForestClassifier on the training sets with default parameters.</p>
 
-<p><strong>Training Set Accuracy</strong>: <strong>0.2838 **<br />
-**Test Set Accuracy</strong>: <strong>0.2788</strong></p>
+<p><strong>Training Set Accuracy</strong>: <strong>0.2835</strong> <br />
+<strong>Test Set Accuracy</strong>: <strong>0.2813</strong></p>
 
 <p>The training set accuracy and test set accuracy are very close, so whether the model is overfitting or underfitting is not clear. In general, the accuracy is low 🫢. I would not use this to simulate a year of reviews for a single recipe.</p>
 
-<p><strong>F1 Score Per Class</strong>: <strong>[0.08, 0.39, 0.3 , 0.08]</strong></p>
+<p><strong>F1 Score Per Class</strong>: <strong>[0.07, 0.36, 0.35 , 0.09]</strong></p>
 
 <p>The F1 score for winter and fall are very low compared to the rest of the season even though the data is balanced per class. This likely indicates feature imbalance for these classes that should be improved upon.</p>
 
 <h2 id="final-model">Final Model</h2>
 
-<p>One very obvious feature that we can add to improve the model is whether the recipe was tagged with a specific season. If there is a recipe that is seasonally winter in nature, it is logically to say that a someone would likely not try that recipe in the middle of summer. To add this I pass the <code class="language-plaintext highlighter-rouge">tags</code> column into a FunctionTransform which, for every recipe’s tags, outputs an array of one-hot encoded vectors that corresponding to whether <code class="language-plaintext highlighter-rouge">summer, winter, fall, or spring</code> was included into the tags.</p>
+<p>One very obvious feature that we can add to improve RandomForestClassifier model is whether the recipe was tagged with a specific season. If there is a recipe that is seasonally winter in nature, it is logical to say that a user would likely not try that recipe in the middle of summer. To add this I pass the <code class="language-plaintext highlighter-rouge">tags</code> column into a FunctionTransform which, for every recipe’s tags, outputs an array of one-hot encoded vectors that corresponding to whether <code class="language-plaintext highlighter-rouge">summer, winter, fall, or spring</code> was included into the tags.</p>
+
+<p><em>Note</em>: I explored another classifier, GradientBoostingClassifier, but the difference in accuracy was very negligble for how computationally expensive GradientBoosting is.</p>
 
 <p>From previous exploritory data anlysis, we know that a lot of reviews tend to be posted close to the season that the recipe was posted. I one-hot encoded the <code class="language-plaintext highlighter-rouge">recipe_submitted_season</code> column to add as a feature.</p>
 
-<p>In addition, I preformed 3-fold CrossValidation using <code class="language-plaintext highlighter-rouge">GridSearchCV</code> on a hyperparameter grid. Even though it is unclear whether the model is overfittingor underfitting because the training and test set errors of the baseline model are similar, I will try to reduce model complexity for performance reasons. For example, if I can use least trees per forest and still get similar performance, that may be perferred. I grid searched through 16 models with varying <em>number of tress in a forest</em>, <code class="language-plaintext highlighter-rouge">n_estimators</code>, and the maximum depth of a single tree, <code class="language-plaintext highlighter-rouge">max_depth</code>.</p>
+<p>In addition, I preformed 3-fold CrossValidation using <code class="language-plaintext highlighter-rouge">GridSearchCV</code> on a hyperparameter grid. Even though it is unclear whether the model is overfitting or underfitting because the training and test set errors of the baseline model are similar, I will try to reduce model complexity for performance reasons. For example, if I can use least trees per forest and still get similar performance, that may be perferred. I grid searched through 16 models with varying <em>number of tress in a forest</em>, <code class="language-plaintext highlighter-rouge">n_estimators</code>, and the maximum depth of a single tree, <code class="language-plaintext highlighter-rouge">max_depth</code>.</p>
 
-<p>The grid search yeilded the best hyperparameters: <code class="language-plaintext highlighter-rouge">max_depth = 10</code> and <code class="language-plaintext highlighter-rouge">n_estimators = 75</code>. <code class="language-plaintext highlighter-rouge">sklearn</code>’s default parameters are <code class="language-plaintext highlighter-rouge">max_depth = None</code> and <code class="language-plaintext highlighter-rouge">n_estimators = 100</code>.</p>
+<p>The grid search yielded the best hyperparameters: <code class="language-plaintext highlighter-rouge">max_depth = 10</code> and <code class="language-plaintext highlighter-rouge">n_estimators = 100</code>. <code class="language-plaintext highlighter-rouge">sklearn</code>’s default parameters are <code class="language-plaintext highlighter-rouge">max_depth = None</code> and <code class="language-plaintext highlighter-rouge">n_estimators = 100</code>.</p>
 
-<p><strong>Training Set Accuracy</strong>: <strong>0.3598</strong> <br />
-<strong>Test Set Accuracy</strong>: <strong>0.3537</strong></p>
+<p><strong>Training Set Accuracy</strong>: <strong>0.3603</strong> <br />
+<strong>Test Set Accuracy</strong>: <strong>0.3522</strong></p>
 
-<p>Test set accuracy increased by approximately 27%. Dispite this, the accuracy is still quite low. I would not use this to simulate a year of reviews for a single recipe. 🫢</p>
+<p>Test set accuracy increased by approximately 25.2%. Dispite this, the accuracy is still quite low. I would not use this to simulate a year of reviews for a single recipe. 🫢</p>
 
-<p><strong>F1 Score Per Class</strong>: <strong>[0.32, 0.36, 0.41, 0.31]</strong></p>
+<p><strong>F1 Score Per Class</strong>: <strong>[0.32, 0.35, 0.41, 0.31]</strong></p>
 
-<p>The F1 scores are more balanced per class with the new model.</p>
+<p>The F1 scores are more balanced per class with the new model. This may be do to the new features elucidiating some of the ambiguity in the temporal trends of recipe complexity.</p>
 
-<p>I can further attribute low model accuracy to, in general, weak temporal trends. This can further be attributed to the assumptions we are making. Food.com is used all over the word where seasonal trends in food may not be well aligned with months in the year. Per region analysis would likely lead to higher accuracy if the data were available.</p>
+<p>I perhaps can further attribute low model accuracy to, in general, weak temporal trends. This can further be attributed to the assumptions we are making. Food.com is used all over the word where seasonal trends in food may not be well aligned with months in the year. Per region analysis would likely lead to higher accuracy if the data were available.</p>
 
 <h2 id="fairness-analysis">Fairness Analysis</h2>
 
@@ -524,10 +524,10 @@
 <p><strong>Null Hypothesis</strong>: The model is fair. Its classification accuracy for main dishes is the same as recipes that are not main dishes.  <br />
 <strong>Alternative Hypothesis</strong>: The model is unfair. Its classification accuracy for main dishes is different as recipes that are not main dishes.</p>
 
-<p>We will use the <em>absolute difference in group means</em> as the test statistic with a <em>permutation test</em></p>
-<iframe src="assets\fairnes.html" width="800" height="600" frameborder="0"></iframe>
+<p>We will use the <em>absolute difference in group means</em> as the test statistic with a <em>permutation test</em>.</p>
+<iframe src="assets\fairness.html" width="800" height="600" frameborder="0"></iframe>
 
-<p>With significance level, alpha = 0.05, the p-value = 0.982 &gt; alpha, we fail to reject the null hypothesis. The model achieves accuracy parity between group <em>X</em> and <em>Y</em>.</p>
+<p>With significance level, alpha = 0.05, the <strong>p-value = 0.04 &lt; alpha</strong>, we  reject the null hypothesis. The model does not achieve accuracy parity between group <em>X</em> and <em>Y</em>.</p>
 
 
       

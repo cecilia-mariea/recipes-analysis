@@ -23,10 +23,10 @@ The first data set we have is `recipes`. It has *83782* rows and *12* columns (d
 | n_steps   | 	Number of steps in recipe   | int64  |
 | steps | 	Text for recipe steps, in order   | str   |
 | description  | User-provided description   | str   |
-| ingredients   | Text for recie ingredinets   | str   |
+| ingredients   | Text for recipe ingredinets   | str   |
 | n_ingredients | The number of required ingredients  | int64   |
 
-The most important columns for temporal anlaysis of complexity will be `submitted`, `tags`, and `n_steps`. 
+The most important columns for temporal anlaysis of complexity will be `submitted`, `tags`, and `n_steps`. `n_ingredients` and `minutes` will also be explored in aggregates.
 
 The second data set we have is `ratings`. It has *731927* rows and *5* columns (described below). 
 
@@ -40,9 +40,7 @@ The second data set we have is `ratings`. It has *731927* rows and *5* columns (
 
 The most imortant columns for temporal analysis of complexity will be `date`. 
 
-## Exploratory Data Analysis 
-
-### Data Cleaning
+## Data Cleaning and Exploratory Data Analysis
 
 In order to do proper investigation, I will clean the data set accordingly. 
 1. Left merge the ratings and the recipes together on `recipe_id` and `id`. 
@@ -50,17 +48,17 @@ In order to do proper investigation, I will clean the data set accordingly.
 
     **The merged data set will now be referred to as `recipes_ratings`.** 
 
-2. Fill the `rating` values with `np.nan` if the are `0`.
-- Looking at the layout of Food.com, all star ratings are out of 1-5. If the user does not leavea a rating, a rating is not dispalyed. In addition if we look through some of the `review` values that correspond to missing `rating` values. Some of them are positive in sentiment and so assigning them to `0` may artificially lower aggregate data. 
+2. Fill the `rating` values with `np.nan` if they are `0`.
+- Looking at the layout of Food.com, all star ratings are out of [1,5]. If the user does not leave a rating, a rating is simply not dispalyed. In addition if we look through some of the `review` values that correspond to missing `rating` values. Some of them are positive in sentiment and so assigning them to `0` may artificially lower aggregate data. 
 3. Find the average rating per recipe and merge back into the `recipes_ratings`. 
 
     **The following steps are additional cleaning / transformation steps required for the specific analyses.**
 
 4. Convert the `date` and `submitted` columns to `pd.DateTime` objects.
 - This will allow us to do transformations on dates.
-- extract the month and year for every both columns into a seperate column
+- Extract the month and year for every both columns into a seperate column
 - I also transformed both the month the review was left and the month the recipe was first submitted into corresponding seasons. 
-`{winter: 1, spring: 2, summer: 3, fall: 4}`
+`{winter: 1, spring: 2, summer: 3, fall: 4}`. I am making another assumption here that the corresponding month are generally well associated with a season. 
 5. Convert the tags into a list of strings.
 - Also parse the tags for every review for whether or not they contain specific tags. This allows us to analyze the *kind* of recipe that the review is being left on. 
     - If the tags included `beginner` or `easy`, I indicate recipe difficulty, `is_easy == True`.
@@ -188,8 +186,7 @@ Use a permutation test using the *total variation distance*. `is_main` is a cate
   frameborder="0"
 ></iframe>
 
-Using a similar testing procedure as explained above. I calculated the **p-value = 0.845**. For a significance level, alpha = 0.05, p-value > alpha. We fail to reject the null hypothesis. The misingness of `rating` is *not* MAR dependent on `is_main`.
-
+Using a similar testing procedure as explained above. I calculated the **p-value = 0.853**. For a significance level, alpha = 0.05, p-value > alpha. We fail to reject the null hypothesis. The misingness of `rating` is *not* MAR dependent on `is_main`.
 
 ## Hypothesis Testing
 In order to further investigate if there are seasonal trends in recipe complexity, I want to investigate if the monthly distribution of recipes depends on whether the recipe is easy or not. 
@@ -206,7 +203,7 @@ We will use the *total variation distance* as the test statistic and a permutati
   frameborder="0"
 ></iframe>
 
-For alpha = 0.05, **p-value < alpha** , we reject the null hypothesis. The monthly distribution of recipes depends on whether the dish is easy or not. This hints at there possible temporal patterns in recipe complexity.
+For alpha = 0.05, **p-value = 0 < alpha** , we reject the null hypothesis. The monthly distribution of recipes depends on whether the dish is easy or not. This hints at there possible temporal patterns in recipe complexity.
 
 ## Framing A Prediction Problem
 
@@ -225,36 +222,38 @@ Since we have some evidence towards temporal / seasonal difference in the comple
 
 I pass `n_steps` without any transformations into a ColumnTransformer ; it is a numerical variable. I one-hot encoded `is_easy`, a binary, nominal categorical variable. I train a `sklearn` RandomForestClassifier on the training sets with default parameters.
 
-**Training Set Accuracy**: **0.2838 **\
-**Test Set Accuracy**: **0.2788**
+**Training Set Accuracy**: **0.2835** \
+**Test Set Accuracy**: **0.2813**
 
 The training set accuracy and test set accuracy are very close, so whether the model is overfitting or underfitting is not clear. In general, the accuracy is low 🫢. I would not use this to simulate a year of reviews for a single recipe. 
 
-**F1 Score Per Class**: **[0.08, 0.39, 0.3 , 0.08]**
+**F1 Score Per Class**: **[0.07, 0.36, 0.35 , 0.09]**
 
 The F1 score for winter and fall are very low compared to the rest of the season even though the data is balanced per class. This likely indicates feature imbalance for these classes that should be improved upon. 
 
 
 ## Final Model
 
-One very obvious feature that we can add to improve the model is whether the recipe was tagged with a specific season. If there is a recipe that is seasonally winter in nature, it is logically to say that a someone would likely not try that recipe in the middle of summer. To add this I pass the `tags` column into a FunctionTransform which, for every recipe's tags, outputs an array of one-hot encoded vectors that corresponding to whether `summer, winter, fall, or spring` was included into the tags. 
+One very obvious feature that we can add to improve RandomForestClassifier model is whether the recipe was tagged with a specific season. If there is a recipe that is seasonally winter in nature, it is logical to say that a user would likely not try that recipe in the middle of summer. To add this I pass the `tags` column into a FunctionTransform which, for every recipe's tags, outputs an array of one-hot encoded vectors that corresponding to whether `summer, winter, fall, or spring` was included into the tags. 
+
+*Note*: I explored another classifier, GradientBoostingClassifier, but the difference in accuracy was very negligble for how computationally expensive GradientBoosting is. 
 
 From previous exploritory data anlysis, we know that a lot of reviews tend to be posted close to the season that the recipe was posted. I one-hot encoded the `recipe_submitted_season` column to add as a feature. 
 
-In addition, I preformed 3-fold CrossValidation using `GridSearchCV` on a hyperparameter grid. Even though it is unclear whether the model is overfittingor underfitting because the training and test set errors of the baseline model are similar, I will try to reduce model complexity for performance reasons. For example, if I can use least trees per forest and still get similar performance, that may be perferred. I grid searched through 16 models with varying *number of tress in a forest*, `n_estimators`, and the maximum depth of a single tree, `max_depth`. 
+In addition, I preformed 3-fold CrossValidation using `GridSearchCV` on a hyperparameter grid. Even though it is unclear whether the model is overfitting or underfitting because the training and test set errors of the baseline model are similar, I will try to reduce model complexity for performance reasons. For example, if I can use least trees per forest and still get similar performance, that may be perferred. I grid searched through 16 models with varying *number of tress in a forest*, `n_estimators`, and the maximum depth of a single tree, `max_depth`. 
 
-The grid search yeilded the best hyperparameters: `max_depth = 10` and `n_estimators = 75`. `sklearn`'s default parameters are `max_depth = None` and `n_estimators = 100`. 
+The grid search yielded the best hyperparameters: `max_depth = 10` and `n_estimators = 100`. `sklearn`'s default parameters are `max_depth = None` and `n_estimators = 100`. 
 
-**Training Set Accuracy**: **0.3598** \
-**Test Set Accuracy**: **0.3537**
+**Training Set Accuracy**: **0.3603** \
+**Test Set Accuracy**: **0.3522**
 
-Test set accuracy increased by approximately 27%. Dispite this, the accuracy is still quite low. I would not use this to simulate a year of reviews for a single recipe. 🫢 
+Test set accuracy increased by approximately 25.2%. Dispite this, the accuracy is still quite low. I would not use this to simulate a year of reviews for a single recipe. 🫢 
 
-**F1 Score Per Class**: **[0.32, 0.36, 0.41, 0.31]**
+**F1 Score Per Class**: **[0.32, 0.35, 0.41, 0.31]**
 
-The F1 scores are more balanced per class with the new model. 
+The F1 scores are more balanced per class with the new model. This may be do to the new features elucidiating some of the ambiguity in the temporal trends of recipe complexity.  
 
-I can further attribute low model accuracy to, in general, weak temporal trends. This can further be attributed to the assumptions we are making. Food.com is used all over the word where seasonal trends in food may not be well aligned with months in the year. Per region analysis would likely lead to higher accuracy if the data were available. 
+I perhaps can further attribute low model accuracy to, in general, weak temporal trends. This can further be attributed to the assumptions we are making. Food.com is used all over the word where seasonal trends in food may not be well aligned with months in the year. Per region analysis would likely lead to higher accuracy if the data were available. 
 
 ## Fairness Analysis
 
@@ -265,13 +264,12 @@ Does my model have the same accuracy for recipes of main dishes as compared to r
 **Null Hypothesis**: The model is fair. Its classification accuracy for main dishes is the same as recipes that are not main dishes.  \
 **Alternative Hypothesis**: The model is unfair. Its classification accuracy for main dishes is different as recipes that are not main dishes. 
 
-We will use the *absolute difference in group means* as the test statistic with a *permutation test*
+We will use the *absolute difference in group means* as the test statistic with a *permutation test*.
 <iframe
-  src="assets\fairnes.html"
+  src="assets\fairness.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
 
-
-With significance level, alpha = 0.05, the p-value = 0.982 > alpha, we fail to reject the null hypothesis. The model achieves accuracy parity between group *X* and *Y*.
+With significance level, alpha = 0.05, the **p-value = 0.04 < alpha**, we  reject the null hypothesis. The model does not achieve accuracy parity between group *X* and *Y*.
