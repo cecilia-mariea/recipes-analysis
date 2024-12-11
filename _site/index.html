@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Analyzing Seasonal Recipe Trends in Complexity 🍽️ | recipes-analysis</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Analyzing Seasonal Recipe Trends in Complexity 🍽️" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Fall 2024 final project for DSC80, UCSD." />
+<meta property="og:description" content="Fall 2024 final project for DSC80, UCSD." />
+<link rel="canonical" href="http://localhost:4000/" />
+<meta property="og:url" content="http://localhost:4000/" />
+<meta property="og:site_name" content="recipes-analysis" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Analyzing Seasonal Recipe Trends in Complexity 🍽️" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebSite","description":"Fall 2024 final project for DSC80, UCSD.","headline":"Analyzing Seasonal Recipe Trends in Complexity 🍽️","name":"recipes-analysis","url":"http://localhost:4000/"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=6ec2aed13ca4c494ba824c9bdd78c6239b25c7f7">
+    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup Google Analytics -->
+
+
+
+<!-- You can set your favicon here -->
+<!-- link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" -->
+
+<!-- end custom head snippets -->
+
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="http://localhost:4000/">recipes-analysis</a></h1>
+      
+
+      
+<h2 id="analyzing-seasonal-recipe-trends-in-complexity-️">Analyzing Seasonal Recipe Trends in Complexity 🍽️</h2>
+<h5 id="cecilia-marie-aban">Cecilia Marie Aban</h5>
+
+<h3 id="introduction">Introduction</h3>
+<p>The data sets subject to analyses are a subset of recipes available at “Food.com” and a corresponding sample of reviews left by users. For a site like Food.com it may be useful to investigate the waves of review traffic that occur per year. Temporal or seasonal trends can help inform decisions on what kind of recipes perform well and when.</p>
+
+<p>Accordingly, understanding the kinds of recipes that are reviewed per season is appropriate for investigation. <strong>Are there seasonal trends regarding the complexity?</strong> For example, are people during the holidays less likely to do recipes that are very difficult?</p>
+
+<p><strong>Note</strong>: To make these sorts of conclusions about general traffic rather than review traffic, we would need to assume that the reviews that are submitted in the data set are a representative population of the titla traffic that is brought on to the site. This assumption does not consider volunteer bias.</p>
+
+<p>The first data set we have is <code class="language-plaintext highlighter-rouge">recipes</code>. It has <em>83782</em> rows and <em>12</em> columns (described below).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Description</th>
+      <th>Data Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>name</td>
+      <td>Recipe Name</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td>id</td>
+      <td>Recipe ID</td>
+      <td>int64</td>
+    </tr>
+    <tr>
+      <td>minutes</td>
+      <td>The number of minutes required to prepare a recipe</td>
+      <td>int64</td>
+    </tr>
+    <tr>
+      <td>contributor_id</td>
+      <td>User ID who submitted this recipe</td>
+      <td>int64</td>
+    </tr>
+    <tr>
+      <td>submitted</td>
+      <td>Date the recipe was submitted</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td>tags</td>
+      <td>Food.com tags for recipe</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td>nutrition</td>
+      <td>Nutrition information in the form [calories (#), total fat (PDV), sugar (PDV), sodium (PDV), protein (PDV), saturated fat (PDV), carbohydrates (PDV)]; PDV stands for “percentage of daily value”</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td>n_steps</td>
+      <td>Number of steps in recipe</td>
+      <td>int64</td>
+    </tr>
+    <tr>
+      <td>steps</td>
+      <td>Text for recipe steps, in order</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td>description</td>
+      <td>User-provided description</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td>ingredients</td>
+      <td>Text for recie ingredinets</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td>n_ingredients</td>
+      <td>The number of required ingredients</td>
+      <td>int64</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The most important columns for temporal anlaysis of complexity will be <code class="language-plaintext highlighter-rouge">submitted</code>, <code class="language-plaintext highlighter-rouge">tags</code>, and <code class="language-plaintext highlighter-rouge">n_steps</code>.</p>
+
+<p>The second data set we have is <code class="language-plaintext highlighter-rouge">ratings</code>. It has <em>731927</em> rows and <em>5</em> columns (described below).</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Description</th>
+      <th>Data Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>user_id</td>
+      <td>User ID of the user who left the review</td>
+      <td>int64</td>
+    </tr>
+    <tr>
+      <td>recipe_id</td>
+      <td>Recipe ID</td>
+      <td>in64</td>
+    </tr>
+    <tr>
+      <td>date</td>
+      <td>date of interaction</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td>rating</td>
+      <td>Rating of the recipe given</td>
+      <td>int64</td>
+    </tr>
+    <tr>
+      <td>review</td>
+      <td>Text of the review given</td>
+      <td>str</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The most imortant columns for temporal analysis of complexity will be <code class="language-plaintext highlighter-rouge">date</code>.</p>
+
+<h2 id="exploratory-data-analysis">Exploratory Data Analysis</h2>
+
+<h3 id="data-cleaning">Data Cleaning</h3>
+
+<p>In order to do proper investigation, I will clean the data set accordingly.</p>
+<ol>
+  <li>Left merge the ratings and the recipes together on <code class="language-plaintext highlighter-rouge">recipe_id</code> and <code class="language-plaintext highlighter-rouge">id</code>.
+    <ul>
+      <li>The most important data points to keep are the recipes that have user data.</li>
+    </ul>
+
+    <p><strong>The merged data set will now be referred to as <code class="language-plaintext highlighter-rouge">recipes_ratings</code>.</strong></p>
+  </li>
+  <li>Fill the <code class="language-plaintext highlighter-rouge">rating</code> values with <code class="language-plaintext highlighter-rouge">np.nan</code> if the are <code class="language-plaintext highlighter-rouge">0</code>.
+    <ul>
+      <li>Looking at the layout of Food.com, all star ratings are out of 1-5. If the user does not leavea a rating, a rating is not dispalyed. In addition if we look through some of the <code class="language-plaintext highlighter-rouge">review</code> values that correspond to missing <code class="language-plaintext highlighter-rouge">rating</code> values. Some of them are positive in sentiment and so assigning them to <code class="language-plaintext highlighter-rouge">0</code> may artificially lower aggregate data.</li>
+    </ul>
+  </li>
+  <li>
+    <p>Find the average rating per recipe and merge back into the <code class="language-plaintext highlighter-rouge">recipes_ratings</code>.</p>
+
+    <p><strong>The following steps are additional cleaning / transformation steps required for the specific analyses.</strong></p>
+  </li>
+  <li>Convert the <code class="language-plaintext highlighter-rouge">date</code> and <code class="language-plaintext highlighter-rouge">submitted</code> columns to <code class="language-plaintext highlighter-rouge">pd.DateTime</code> objects.
+    <ul>
+      <li>This will allow us to do transformations on dates.</li>
+      <li>extract the month and year for every both columns into a seperate column</li>
+      <li>I also transformed both the month the review was left and the month the recipe was first submitted into corresponding seasons. 
+<code class="language-plaintext highlighter-rouge">{winter: 1, spring: 2, summer: 3, fall: 4}</code></li>
+    </ul>
+  </li>
+  <li>Convert the tags into a list of strings.
+    <ul>
+      <li>Also parse the tags for every review for whether or not they contain specific tags. This allows us to analyze the <em>kind</em> of recipe that the review is being left on.</li>
+    </ul>
+    <ul>
+      <li>If the tags included <code class="language-plaintext highlighter-rouge">beginner</code> or <code class="language-plaintext highlighter-rouge">easy</code>, I indicate recipe difficulty, <code class="language-plaintext highlighter-rouge">is_easy == True</code>.</li>
+      <li>If the tags include <code class="language-plaintext highlighter-rouge">fall, winter, spring, summer, or seasonal</code>, I indicate the recipe as <code class="language-plaintext highlighter-rouge">is_seasonal == True</code>.</li>
+      <li>If the tags include <code class="language-plaintext highlighter-rouge">main-dish</code>, I indicate the recipe as <code class="language-plaintext highlighter-rouge">is_main == True</code></li>
+    </ul>
+  </li>
+</ol>
+
+<p>The additional or transformed columns are now as described below.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Description</th>
+      <th>Data Type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>avg recipe rating</td>
+      <td>the average rating of a recipe</td>
+      <td>float64</td>
+    </tr>
+    <tr>
+      <td>date</td>
+      <td>the date the user left the review</td>
+      <td>dateTime</td>
+    </tr>
+    <tr>
+      <td>review_season</td>
+      <td>the season the review was submitted</td>
+      <td>int32</td>
+    </tr>
+    <tr>
+      <td>recipe_submitted_season</td>
+      <td>the season the recipe was submited</td>
+      <td>int32</td>
+    </tr>
+    <tr>
+      <td>submitted</td>
+      <td>the date the recipe was submitted</td>
+      <td>dateTime</td>
+    </tr>
+    <tr>
+      <td>month</td>
+      <td>the month the user left the review</td>
+      <td>int32</td>
+    </tr>
+    <tr>
+      <td>year</td>
+      <td>the year the user left the review</td>
+      <td>int32</td>
+    </tr>
+    <tr>
+      <td>year_submitted</td>
+      <td>the year the recipe was submitted</td>
+      <td>int32</td>
+    </tr>
+    <tr>
+      <td>tags</td>
+      <td>Food.com tags</td>
+      <td>list</td>
+    </tr>
+    <tr>
+      <td>is_easy</td>
+      <td>difficulty of the recipe according to tags</td>
+      <td>Boolean</td>
+    </tr>
+    <tr>
+      <td>is_seasonal</td>
+      <td>if the recipe is seasonal according to tags</td>
+      <td>Boolean</td>
+    </tr>
+    <tr>
+      <td>is_main</td>
+      <td>if the recipe is for a main dish according to tags</td>
+      <td>Boolean</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The most important columns of the final DataFrame for analyses are displayed below.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">recipe_id</th>
+      <th style="text-align: left">date</th>
+      <th style="text-align: right">month</th>
+      <th style="text-align: right">year</th>
+      <th style="text-align: right">review_season</th>
+      <th style="text-align: right">rating</th>
+      <th style="text-align: left">submitted</th>
+      <th style="text-align: right">year_submitted</th>
+      <th style="text-align: right">recipe_submitted_season</th>
+      <th style="text-align: left">is_easy</th>
+      <th style="text-align: left">is_main</th>
+      <th style="text-align: left">is_seasonal</th>
+      <th style="text-align: right">n_steps</th>
+      <th style="text-align: right">rating</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">306785</td>
+      <td style="text-align: left">2008-07-15 00:00:00</td>
+      <td style="text-align: right">7</td>
+      <td style="text-align: right">2008</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">2008-06-02 00:00:00</td>
+      <td style="text-align: right">2008</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">True</td>
+      <td style="text-align: left">False</td>
+      <td style="text-align: left">True</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: right">5</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">310237</td>
+      <td style="text-align: left">2010-05-07 00:00:00</td>
+      <td style="text-align: right">5</td>
+      <td style="text-align: right">2010</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">2008-06-19 00:00:00</td>
+      <td style="text-align: right">2008</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">False</td>
+      <td style="text-align: left">False</td>
+      <td style="text-align: left">False</td>
+      <td style="text-align: right">9</td>
+      <td style="text-align: right">5</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">321038</td>
+      <td style="text-align: left">2009-06-22 00:00:00</td>
+      <td style="text-align: right">6</td>
+      <td style="text-align: right">2009</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">2008-08-24 00:00:00</td>
+      <td style="text-align: right">2008</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">False</td>
+      <td style="text-align: left">False</td>
+      <td style="text-align: left">False</td>
+      <td style="text-align: right">14</td>
+      <td style="text-align: right">5</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><code class="language-plaintext highlighter-rouge">n_steps</code> will be used in complexity investigations. <code class="language-plaintext highlighter-rouge">recipes_ratings</code> has <em>234426</em> rows and <em>28</em> columns.</p>
+
+<h3 id="univariate-analysis">Univariate Analysis</h3>
+<p>The first thing that would be useful to determine is if there is a month that brings in a lot of review traffic. To do this we plot the distribution of review counts per month. This way we can gear temporal trends around the most popular month. It looks like all traffic is even per month.</p>
+
+<iframe src="assets\review_month_distr.html" width="800" height="600" frameborder="0"></iframe>
+
+<p>To determine if users generally leave reviews on more recent recipes. We can look at the distribution of the year difference between when the user reviewed the recipe and when the review was first submitted. This would give us an idea of general review traffic in terms of recency.</p>
+
+<iframe src="assets\time_from_submitted.html" width="800" height="600" frameborder="0"></iframe>
+
+<p>It looks like most reviews are left within two years of when the recipe was first submitted. This may hint that review traffic is most likely on new or current recipes.</p>
+
+<h3 id="bivariate-analysis">Bivariate Analysis</h3>
+<p>The next thing I want to investigate is whether or not people generally review the recipe in the same or adjacent season as the recipe was initially posted. If we condition this statistic on whether or not the recipe is considered seasonal, we can see if people are reviewing seasonal recipes in different seasons similarly to non seasonal recipes. To do this, I have to considered that there is a cyclic relationship between seasons; winter is close to fall even though I have labeled the <code class="language-plaintext highlighter-rouge">1</code> and <code class="language-plaintext highlighter-rouge">4</code>. I used cyclic difference to do this.</p>
+
+<iframe src="assets\seasonal_diff.html" width="800" height="600" frameborder="0"></iframe>
+
+<p>What this shows us is that for both seasonal and non seasonal recipes reviews are left mostly within 1 season away from when the review was posted. Though the distribution may differ between the two groups;proportions vary between the two groups. The proportion of reviews that were left within the same season is higher for the seasonal recipes than the non-seasonal recipes.</p>
+
+<p>I want to investigate whether there is any other representative statistics of recipe complexity that I can use in my analyses. Logically, the number of steps a recipe may require may be alligned with recipe complexity. To do this I investigated the distribution of <code class="language-plaintext highlighter-rouge">n_steps</code> when conditioned on <code class="language-plaintext highlighter-rouge">is_easy</code>.</p>
+
+<iframe src="assets\steps_by_diff.html" width="800" height="600" frameborder="0"></iframe>
+
+<p>The modes and averages are different whether the group is considered easy or if it is not. We can investigate this further with aggregate data.</p>
+
+<h3 id="interesting-aggregates">Interesting Aggregates</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">is_easy</th>
+      <th style="text-align: right">(‘mean’, ‘minutes’)</th>
+      <th style="text-align: right">(‘mean’, ‘n_ingredients’)</th>
+      <th style="text-align: right">(‘mean’, ‘n_steps’)</th>
+      <th style="text-align: right">(‘median’, ‘minutes’)</th>
+      <th style="text-align: right">(‘median’, ‘n_ingredients’)</th>
+      <th style="text-align: right">(‘median’, ‘n_steps’)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">False</td>
+      <td style="text-align: right">94.4941</td>
+      <td style="text-align: right">10.7953</td>
+      <td style="text-align: right">12.6056</td>
+      <td style="text-align: right">45</td>
+      <td style="text-align: right">10</td>
+      <td style="text-align: right">11</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">True</td>
+      <td style="text-align: right">100.213</td>
+      <td style="text-align: right">7.83355</td>
+      <td style="text-align: right">8.15922</td>
+      <td style="text-align: right">30</td>
+      <td style="text-align: right">7</td>
+      <td style="text-align: right">7</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Continuing with the analysis of whether there are other representative statistics of recipe complexity, both the mean and median number of ingredients, <code class="language-plaintext highlighter-rouge">n_ingredients</code> and number of required steps, <code class="language-plaintext highlighter-rouge">n_steps</code> is lower for easy recipes. The mean number of minutes, <code class="language-plaintext highlighter-rouge">minutes</code>, required is higher for easy recipes, but the median number of minutes is lower for easy recipes. This may indicate an outlier number of minutes in the easy category.</p>
+
+<h2 id="assessment-of-missingness">Assessment of Missingness</h2>
+<h3 id="nmar-missingness">NMAR Missingness</h3>
+<p>In the final DataFrame, <code class="language-plaintext highlighter-rouge">recipes_ratings</code>, there are <em>57</em> <code class="language-plaintext highlighter-rouge">review</code> values missing. The missingness mechanism of this column is likely <strong>NMAR</strong>. A user is probably more likely to leave a review if they feel strongly about a recipe, whether the love it or they hate. A user that is less interested or indifferent about the recipe would likely not be compelled to leave a review.</p>
+
+<h2 id="mar-missingnes">MAR Missingnes</h2>
+<p>There are <em>15035</em> missing <code class="language-plaintext highlighter-rouge">rating</code> values missing. As previously mentioned, investigating the <code class="language-plaintext highlighter-rouge">review</code> column of the corresponding missing <code class="language-plaintext highlighter-rouge">rating</code> rows, the <code class="language-plaintext highlighter-rouge">review</code> may very positive, but the <code class="language-plaintext highlighter-rouge">rating</code> is missing. This indicates that the missingness is significant.</p>
+
+<p>Is <code class="language-plaintext highlighter-rouge">rating</code> MAR dependent on <code class="language-plaintext highlighter-rouge">n_steps</code>?</p>
+
+<p><strong>Null Hypothesis</strong>: The missing and non-missing groups of <code class="language-plaintext highlighter-rouge">rating</code> have the same distribution of <code class="language-plaintext highlighter-rouge">n_steps</code>. <br />
+<strong>Alternative Hypothesis</strong>: The missing and non-missing groups of <code class="language-plaintext highlighter-rouge">rating</code> have a different distribution of <code class="language-plaintext highlighter-rouge">n_steps</code>.</p>
+
+<p>Use a permutation test using the <em>absolute difference in group means</em>. <code class="language-plaintext highlighter-rouge">n_steps</code> is a numerical variable.</p>
+
+<iframe src="assets\steps_MAR.html" width="800" height="600" frameborder="0"></iframe>
+
+<p>I shuffled the <code class="language-plaintext highlighter-rouge">rating</code> column a <em>1000</em> times. Each time, I calculated the test statistic to compare the null and non-null data. After the simulation I compared the simulated test statistics with the observed test statistic by calculating <strong>p-value = 0</strong>. In the above graph, the observed value is represented by the red line ; its far from the rest of the simulated data.</p>
+
+<p>The p-value is 0; for any significance level,  we reject the null hypothesis. The missingness of <code class="language-plaintext highlighter-rouge">ratings</code> <em>is</em> MAR dependent on <code class="language-plaintext highlighter-rouge">n_steps</code>.</p>
+
+<p>Is <code class="language-plaintext highlighter-rouge">rating</code> MAR dependent on <code class="language-plaintext highlighter-rouge">is_main</code>, where <code class="language-plaintext highlighter-rouge">is_main</code> is a boolean corresponding to whether the recipe is a main dish?</p>
+
+<p><strong>Null Hypothesis</strong>: The missing and non-missing groups of <code class="language-plaintext highlighter-rouge">rating</code> have the same distribution of <code class="language-plaintext highlighter-rouge">is_main</code> counts. <br />
+<strong>Alternative Hypothesis</strong>: The missing and non-missing groups of <code class="language-plaintext highlighter-rouge">rating</code> have a different distribution of <code class="language-plaintext highlighter-rouge">is_main</code> counts.</p>
+
+<p>Use a permutation test using the <em>total variation distance</em>. <code class="language-plaintext highlighter-rouge">is_main</code> is a categorical variable.</p>
+
+<iframe src="assets\main_MAR.html" width="800" height="600" frameborder="0"></iframe>
+
+<p>Using a similar testing procedure as explained above. I calculated the <strong>p-value = 0.845</strong>. For a significance level, alpha = 0.05, p-value &gt; alpha. We fail to reject the null hypothesis. The misingness of <code class="language-plaintext highlighter-rouge">rating</code> is <em>not</em> MAR dependent on <code class="language-plaintext highlighter-rouge">is_main</code>.</p>
+
+<h2 id="hypothesis-testing">Hypothesis Testing</h2>
+<p>In order to further investigate if there are seasonal trends in recipe complexity, I want to investigate if the monthly distribution of recipes depends on whether the recipe is easy or not.</p>
+
+<p><strong>Null Hypothesis</strong>: Recipes that are considered easy have the same month distribution than those that are not. <br />
+<strong>Alternative Hypothesis</strong>: Recpies that are considered easy have a different month distribution than those that are not.</p>
+
+<p>We will use the <em>total variation distance</em> as the test statistic and a permutation test to investigate the signifance of the <code class="language-plaintext highlighter-rouge">is_easy</code> group label. <code class="language-plaintext highlighter-rouge">month</code> is a categorical variable for this analysis.</p>
+
+<iframe src="assets\season_difficulty.html" width="800" height="600" frameborder="0"></iframe>
+
+<p>For alpha = 0.05, <strong>p-value &lt; alpha</strong> , we reject the null hypothesis. The monthly distribution of recipes depends on whether the dish is easy or not. This hints at there possible temporal patterns in recipe complexity.</p>
+
+<h2 id="framing-a-prediction-problem">Framing A Prediction Problem</h2>
+
+<p>I want to predict the season that one review will be left.</p>
+
+<p>This is a <strong>multi-class classification problem</strong> with the <strong>season</strong> that the review being submitted is the <em>response variable</em>. I choose this because the distribution of recipes left per season is even and there is real world implications of being able to predict this. Primarily, a company can use a model that can predict any one review’s season to simulate a year reviews for one particular recipe. This could guide the site to posting certain kinds of recipes to manipulate review traffic during a particular season. In addition, my hypothesis test has provide some evidence towards temporal / seasonal differences in the complexity of the recipe.</p>
+
+<p>For the problem I will be using <strong>accuracy</strong> as metric. This is reasonable since the distribution of recipes across seasons is fairly even; I have generally balanced classes. I will also interpret <strong>F1 Scores</strong> per class, to see if there are some features that overlap during some seasons leading to ambiguity. For predictors, I only have access to features that are available at the time of prediction. Specifically, I will only be using information about a recipe, not the review left.</p>
+
+<p>I will split the data into training and test sets with my test sets being 25% of the entire data set. For reproducibility, I fixed the splitting of the data’s randomness.</p>
+
+<p>In general predicitng time-based response variables is difficult because we are relying on users’ consistent trends. A model may not be able to decipher and appriopriately interpret ambiguity in the features that come with usage trends.</p>
+
+<h2 id="baseline-model">Baseline Model</h2>
+<p>Since we have some evidence towards temporal / seasonal difference in the complexity of the recipe from hypothesis testing, I will first train a model based on representative statistics of  recipe complexity: <code class="language-plaintext highlighter-rouge">n_steps</code> and <code class="language-plaintext highlighter-rouge">is_easy</code>.</p>
+
+<p>I pass <code class="language-plaintext highlighter-rouge">n_steps</code> without any transformations into a ColumnTransformer ; it is a numerical variable. I one-hot encoded <code class="language-plaintext highlighter-rouge">is_easy</code>, a binary, nominal categorical variable. I train a <code class="language-plaintext highlighter-rouge">sklearn</code> RandomForestClassifier on the training sets with default parameters.</p>
+
+<p><strong>Training Set Accuracy</strong>: <strong>0.2838 **<br />
+**Test Set Accuracy</strong>: <strong>0.2788</strong></p>
+
+<p>The training set accuracy and test set accuracy are very close, so whether the model is overfitting or underfitting is not clear. In general, the accuracy is low 🫢. I would not use this to simulate a year of reviews for a single recipe.</p>
+
+<p><strong>F1 Score Per Class</strong>: <strong>[0.08, 0.39, 0.3 , 0.08]</strong></p>
+
+<p>The F1 score for winter and fall are very low compared to the rest of the season even though the data is balanced per class. This likely indicates feature imbalance for these classes that should be improved upon.</p>
+
+<h2 id="final-model">Final Model</h2>
+
+<p>One very obvious feature that we can add to improve the model is whether the recipe was tagged with a specific season. If there is a recipe that is seasonally winter in nature, it is logically to say that a someone would likely not try that recipe in the middle of summer. To add this I pass the <code class="language-plaintext highlighter-rouge">tags</code> column into a FunctionTransform which, for every recipe’s tags, outputs an array of one-hot encoded vectors that corresponding to whether <code class="language-plaintext highlighter-rouge">summer, winter, fall, or spring</code> was included into the tags.</p>
+
+<p>From previous exploritory data anlysis, we know that a lot of reviews tend to be posted close to the season that the recipe was posted. I one-hot encoded the <code class="language-plaintext highlighter-rouge">recipe_submitted_season</code> column to add as a feature.</p>
+
+<p>In addition, I preformed 3-fold CrossValidation using <code class="language-plaintext highlighter-rouge">GridSearchCV</code> on a hyperparameter grid. Even though it is unclear whether the model is overfittingor underfitting because the training and test set errors of the baseline model are similar, I will try to reduce model complexity for performance reasons. For example, if I can use least trees per forest and still get similar performance, that may be perferred. I grid searched through 16 models with varying <em>number of tress in a forest</em>, <code class="language-plaintext highlighter-rouge">n_estimators</code>, and the maximum depth of a single tree, <code class="language-plaintext highlighter-rouge">max_depth</code>.</p>
+
+<p>The grid search yeilded the best hyperparameters: <code class="language-plaintext highlighter-rouge">max_depth = 10</code> and <code class="language-plaintext highlighter-rouge">n_estimators = 75</code>. <code class="language-plaintext highlighter-rouge">sklearn</code>’s default parameters are <code class="language-plaintext highlighter-rouge">max_depth = None</code> and <code class="language-plaintext highlighter-rouge">n_estimators = 100</code>.</p>
+
+<p><strong>Training Set Accuracy</strong>: <strong>0.3598</strong> <br />
+<strong>Test Set Accuracy</strong>: <strong>0.3537</strong></p>
+
+<p>Test set accuracy increased by approximately 27%. Dispite this, the accuracy is still quite low. I would not use this to simulate a year of reviews for a single recipe. 🫢</p>
+
+<p><strong>F1 Score Per Class</strong>: <strong>[0.32, 0.36, 0.41, 0.31]</strong></p>
+
+<p>The F1 scores are more balanced per class with the new model.</p>
+
+<p>I can further attribute low model accuracy to, in general, weak temporal trends. This can further be attributed to the assumptions we are making. Food.com is used all over the word where seasonal trends in food may not be well aligned with months in the year. Per region analysis would likely lead to higher accuracy if the data were available.</p>
+
+<h2 id="fairness-analysis">Fairness Analysis</h2>
+
+<p>Does my model have the same accuracy for recipes of main dishes as compared to recieps that are not main dishes?</p>
+<ul>
+  <li>Group X: recipes <code class="language-plaintext highlighter-rouge">is_main == True</code> ; recipes for main dishes</li>
+  <li>Group Y: recipes <code class="language-plaintext highlighter-rouge">is_main == False</code> ; recipes for not main dishes</li>
+</ul>
+
+<p><strong>Null Hypothesis</strong>: The model is fair. Its classification accuracy for main dishes is the same as recipes that are not main dishes.  <br />
+<strong>Alternative Hypothesis</strong>: The model is unfair. Its classification accuracy for main dishes is different as recipes that are not main dishes.</p>
+
+<p>We will use the <em>absolute difference in group means</em> as the test statistic with a <em>permutation test</em></p>
+<iframe src="assets\fairnes.html" width="800" height="600" frameborder="0"></iframe>
+
+<p>With significance level, alpha = 0.05, the p-value = 0.982 &gt; alpha, we fail to reject the null hypothesis. The model achieves accuracy parity between group <em>X</em> and <em>Y</em>.</p>
+
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>
